@@ -1,0 +1,328 @@
+/*portada toto inicio y fondo inicio*/
+img{
+    width: 100%;
+    height: 100%;
+}
+body{
+    background-image: url(/imagenes/fondo2.jpg);
+    background-position: top;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-attachment: fixed;
+    justify-content: center;
+    margin: 0; 
+    display: flex;
+    flex-direction: column;
+    align-items: center;  
+}
+/*portada toto inicio y fondo fin*/
+/*navbar inicio*/
+.menu{
+    display: flex; 
+    margin: 0;
+}
+.main-navbar{
+    background: rgba(104, 92, 102, 0.5);
+    width: 65%;
+    height: auto;
+    padding: 0;
+    border-radius: 5px;
+    margin:auto;
+}
+.main-navbar ul{
+    margin: 0;
+    display: flex;
+    padding: 0;
+    width: 100%;    
+}
+.main-navbar li{
+    list-style: none;
+    margin: 0px;
+    width: 100%;
+    border-radius: 5px;
+}
+nav a{
+    text-decoration: none;
+}
+.main-navbar a{
+    color: white;
+    display: inline-block;
+    padding: 20px 3px;
+    width: 100%;
+    text-align: center;
+}
+.menu li{
+    position: relative;
+    z-index: 5;
+    display: inline-block;
+}
+.vertical-vertical, .vertical-secre, .vertical-teso{
+    display:none;
+}
+.menu ul {
+    display: none;
+   
+}
+.menu-vertical .vertical-vertical{
+    display: none;
+    background-color: rgba(17, 138, 138, 0.918);
+    align-items: center;
+}
+.menu-vertical a{
+    padding: 8px;
+    text-align: left;
+    
+}
+.menu-vertical2 a{
+    padding: 8px;
+    text-align: left;
+    
+}
+.menus:hover{
+    background-color: rgba(77, 77, 82, 0.8);  
+}
+.uno:hover{
+    background-color: rgba(77, 77, 82, 0.8);   
+}
+.secre-secre:hover{
+    background-color: rgb(77, 77, 82, 0.8);   
+}
+.civil-civil:hover{
+    background-color: rgb(77, 77, 82, 0.8);   
+}
+.teso-teso:hover{
+    background-color: rgb(77, 77, 82, 0.8);   
+}
+.main-navbar li:hover a{
+    color: black;
+}
+.menu-vertical, .menu-vertical2, .vertical-civil, .secre, .teso{
+    background: rgba(153, 151, 151, 0.938);
+    border-radius: 5px;
+}
+/*navbar fin*/
+/*ventanas emergentes inicio*/
+.modal{
+    visibility: hidden;
+    opacity: 0;
+    position: fixed;
+    z-index: 8;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:rgba(117, 100, 100, 0.5);
+    transition: all .4s;
+}
+.modal-content{
+    padding: 20px;
+    position: relative;
+    width: 650px;
+    height: auto;
+    background: #0d0d0f;
+    border-radius: 10px;
+    box-shadow: 0 0 5px rgba(0 0 0 / .15);
+}
+.modal-content h2{
+    margin-top: 20px;
+    color:aqua;
+}
+.modal-content ul{
+    padding: 0;
+    margin: 20px 0;
+    color: aqua;
+    line-height: 25px;
+}
+.close-todos{
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    border-radius: 5px;
+    background: rgba(176, 175, 192, 0.301);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.close-todos a{
+    text-decoration: none;
+    font-weight: 800;
+    font-size: 20px;
+    color: rgb(243, 244, 245);
+}
+.close-todos a:hover {
+    color: black;
+}
+.modal:target{
+    visibility: visible;
+    opacity: 1;
+}
+.estilo{
+    list-style:square;
+    right: 40px;
+    list-style-position: inside;
+}
+/*ventanas emergentes fin*/
+/*articulo toto inicio*/
+.articulo{
+    margin: 3px;
+    padding: 0;
+    width: 65%;
+    height: auto;
+    border: 1px dotted #f3f3f3;
+    border-radius: 5px;  
+}
+.articulo .articulo2 .info{
+    display: flex;
+}
+.articulo .articulo2{
+    padding: 0;
+    width: 98%;
+    height: auto;
+    margin: 10px auto;
+    border-radius: 5px;
+    background: rgba(43, 28, 40, 0.5);
+    color: rgb(226, 212, 212);
+}
+.pdf{
+    width: 100%;
+}
+.info{
+    flex-grow: 1;
+    flex-wrap: wrap;
+}
+.organigrama{
+    width: 100%;
+    height: auto;
+    margin: 0;
+}
+.orga{
+    width: 100%;
+    margin: 4px 4px 15px 4px;
+    background-color: #1b1b29ec;
+    flex-direction: initial;
+}
+.orga .organigrama{
+    margin: 10px;
+    text-align: center;
+}
+.pdf{
+    height: 100%;
+}
+iframe{
+    width: 100%;
+    height: 600px;
+}
+/*articulo toto fin*/
+/*adaptar a dispositivos moviles inicio*/
+@media screen and (min-width:600px) {
+    .vertical-civil, .secre, .teso{
+        left: 100%;
+        top: 0;
+    }
+    .uno:hover ul{
+        width: 235px;
+    }
+    .secre-secre:hover ul{
+        width: 245px;
+    }
+    .teso-teso:hover ul{
+        width: 185px;
+    }
+    .civil-civil:hover ul{
+        width: 180px;
+    }
+    .menu ul {
+        position: absolute;
+    }
+    .menu ul li:hover  .vertical-vertical{
+        display: initial;
+    }
+    .menu ul li:hover .vertical-secre{
+        display: initial;
+    }
+    .menu ul li:hover .vertical-teso{
+        display: initial;
+    }
+    .menu li:hover ul {
+        display: initial;
+    }
+}
+/*adaptar a dispositivos moviles inicio*/
+@media screen and (min-width:600px) {
+    .vertical-civil, .secre, .teso{
+        left: 100%;
+        top: 0;
+    }
+    .uno:hover ul{
+        width: 235px;
+    }
+    .secre-secre:hover ul{
+        width: 245px;
+    }
+    .teso-teso:hover ul{
+        width: 185px;
+    }
+    .civil-civil:hover ul{
+        width: 180px;
+    }
+    .menu ul {
+        position: absolute;
+    }
+    .menu ul li:hover  .vertical-vertical{
+        display: initial;
+    }
+    .menu ul li:hover .vertical-secre{
+        display: initial;
+    }
+    .menu ul li:hover .vertical-teso{
+        display: initial;
+    }
+    .menu li:hover ul {
+        display: initial;
+    }
+}
+@media screen  and (max-width:1000px) {
+    .main-navbar{
+        flex-direction: column;
+        width: 100%;
+        
+    }
+    .menu-vertical2{
+        width: 100%;
+        position: absolute;
+        left: 0;
+    }
+    .menu{
+        width: 100%;
+        font-size: 15px;
+    }
+    .articulo{
+        width: 100%;
+        flex-direction: column;
+        align-content: center;
+    }
+    .info{
+       width: 100%;
+    }
+   
+}
+@media screen  and (max-width:600px) {
+   
+    .menu{
+        flex-grow: 1;
+        flex-wrap: wrap;
+    }
+    .main-navbar  .activo{
+        display: block;
+        position: relative;
+    }
+    .main-navbar li a {
+        color: #00000c;
+    }
+}
+/*adaptar a dispositivos moviles fin*/

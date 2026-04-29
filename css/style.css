@@ -1,0 +1,425 @@
+/*portada toto inicio y fondo inicio*/
+img{
+    width: 100%;
+    height: 100%;
+}
+body{
+    background-image: url(/imagenes/fondo2.jpg);
+    background-position: top;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-attachment: fixed;
+    justify-content: center;
+    margin: 0; 
+    display: flex;
+    flex-direction: column;
+    align-items: center;  
+}
+/*portada toto inicio y fondo fin*/
+
+/*navbar inicio*/
+.menu{
+    display: flex; 
+    margin: 0;
+}
+.main-navbar{
+    background: rgba(104, 92, 102, 0.5);
+    width: 65%;
+    height: auto;
+    padding: 0;
+    border-radius: 5px;
+    margin:auto;
+}
+.main-navbar ul{
+    margin: 0;
+    display: flex;
+    padding: 0;
+    width: 100%;    
+}
+.main-navbar li{
+    list-style: none;
+    margin: 0px;
+    width: 100%;
+    border-radius: 5px;
+}
+nav a{
+    text-decoration: none;
+}
+.main-navbar a{
+    color: white;
+    display: inline-block;
+    padding: 20px 3px;
+    width: 100%;
+    text-align: center;
+}
+.menu li{
+    position: relative;
+    z-index: 5;
+    display: inline-block;
+}
+.vertical-vertical, .vertical-secre, .vertical-teso{
+    display:none;
+}
+.menu ul {
+    display: none;
+   
+}
+.menu-vertical .vertical-vertical{
+    display: none;
+    background-color: rgba(17, 138, 138, 0.5);
+    align-items: center;
+}
+.menu-vertical a{
+    padding: 8px;
+    text-align: left;
+    
+}
+.menu-vertical2 a{
+    padding: 8px;
+    text-align: left;
+    
+}
+.menus:hover{
+    background-color: rgba(77, 77, 82, 0.8);  
+}
+.uno:hover{
+    background-color: rgba(77, 77, 82, 0.8);   
+}
+.secre-secre:hover{
+    background-color: rgb(77, 77, 82, 0.8);   
+}
+.civil-civil:hover{
+    background-color: rgb(77, 77, 82, 0.8);   
+}
+.teso-teso:hover{
+    background-color: rgb(77, 77, 82, 0.8);   
+}
+.main-navbar li:hover a{
+    color: black;
+}
+.menu-vertical, .menu-vertical2, .vertical-civil, .secre, .teso{
+    background: rgba(153, 151, 151, 0.7);
+    border-radius: 5px;
+}
+/*navbar fin*/
+
+/*imagenes slider inicio*/
+.container-carousel{
+    width: 65%;
+    height: 350px;
+    position: relative;
+    z-index: 4;
+    overflow: hidden;
+    border-radius: 10px;
+}
+.carruseles{
+    width: 500%;
+    height: 100%;
+    display: flex;
+}
+.slider-section{
+    width: calc(100% / 5);
+    height: 100%;
+}
+.slider-section img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+}
+.btn-left, .btn-right{
+    display: flex;
+    position: absolute;
+    top: 50%;
+    font-size: 1.5rem;
+    background-color: #f3f3f3b0;
+    border-radius: 50%;
+    padding: 5px;
+    font-weight: 600;
+    cursor: pointer;
+    color: #0c0c0e;
+    transform: translate(0, -50%);
+    transition: .8s ease;
+    user-select: none;
+    
+}
+.btn-left:hover, .btn-right:hover{
+    background-color: #02020ca8;
+    color: #f3f3f3;
+}
+.btn-right{
+    right: 10px;
+}
+.btn-left{
+    left: 10px;
+}
+.temas{
+    padding: 5px;
+    margin: 0;
+    left: 9%;
+    text-align: center;
+    position: absolute;
+    font-size: 20px;
+    top: 90%;  
+    width: 15%; 
+    height: auto;
+    border-radius: 20px;
+    background-color: rgba(255, 255, 255, 0.425);
+}
+ /*imagenes slider fin*/   
+
+/*como llegar a toto inicio*/
+h1{
+    margin: auto;
+    width: 65%;
+    height: 20px;
+    color: rgb(255, 231, 231);
+    height: 30px;
+}
+/*como llegar a toto fin*/
+/*google maps inicio*/
+iframe{
+    display: flex;
+    width: 65%;
+    padding: 0px;
+    border-radius: 5px;
+}
+/*google maps fin*/
+
+/*articulo toto inicio*/
+.articulo{
+    margin: 3px;
+    padding: 0;
+    width: 65%;
+    height: auto;
+    border: 1px dotted #f3f3f3;
+    border-radius: 5px;  
+}
+.articulo .articulo2 .info{
+    display: flex;
+}
+.articulo .articulo2{
+    padding: 0;
+    width: 98%;
+    height: auto;
+    margin: 10px auto;
+    border-radius: 5px;
+    background: rgba(43, 28, 40, 0.5);
+    color: rgb(226, 212, 212);
+}
+.articulo .articulo2 h2{
+    height: 30px;
+    margin: 40px 10px;
+    margin-bottom: 10px;
+    text-align: left;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.articulo .articulo2 p{
+    width: 90%;
+    margin: 0px 10px;
+    margin-bottom: 5px;
+    text-align: justify;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.articulo .articulo2 .totoescudo{
+    margin:5px 5px;
+}
+.articulo2 img{
+    object-fit: cover;
+    width: 190px;
+    height:210px;
+    margin: 40px 40px;
+}
+.linea{
+    width: 95%;
+    height: 25px;
+    border-top: 1px dotted #f3f3f3;
+    margin: auto;
+}
+.linea2{
+    width: 95%;
+    height: 100px;
+    border-top: 1px dotted #f3f3f3;
+    margin: auto;
+}
+/*articulo toto fin*/
+
+/*ventanas emergentes inicio*/
+.modal{
+    visibility: hidden;
+    opacity: 0;
+    position: fixed;
+    z-index: 8;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:rgba(117, 100, 100, 0.5);
+    transition: all .4s;
+}
+.modal-content{
+    padding: 20px;
+    position: relative;
+    width: 650px;
+    height: auto;
+    background: #0d0d0f;
+    border-radius: 10px;
+    box-shadow: 0 0 5px rgba(0 0 0 / .15);
+}
+.modal-content h2{
+    margin-top: 20px;
+    color:aqua;
+}
+.modal-content ul{
+    padding: 0;
+    margin: 20px 0;
+    color: aqua;
+    line-height: 25px;
+}
+.close-todos{
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    border-radius: 5px;
+    background: rgba(176, 175, 192, 0.301);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.close-todos a{
+    text-decoration: none;
+    font-weight: 800;
+    font-size: 20px;
+    color: rgb(243, 244, 245);
+}
+.close-todos a:hover {
+    color: black;
+}
+.modal:target{
+    visibility: visible;
+    opacity: 1;
+}
+.estilo{
+    list-style:square;
+    right: 40px;
+    list-style-position: inside;
+}
+/*ventanas emergentes fin*/
+
+/*adaptar a dispositivos moviles inicio*/
+@media screen and (min-width:600px) {
+    .vertical-civil, .secre, .teso{
+        left: 100%;
+        top: 0;
+    }
+    .uno:hover ul{
+        width: 235px;
+    }
+    .secre-secre:hover ul{
+        width: 245px;
+    }
+    .teso-teso:hover ul{
+        width: 185px;
+    }
+    .civil-civil:hover ul{
+        width: 180px;
+    }
+    .menu ul {
+        position: absolute;
+    }
+    .menu ul li:hover  .vertical-vertical{
+        display: initial;
+    }
+    .menu ul li:hover .vertical-secre{
+        display: initial;
+    }
+    .menu ul li:hover .vertical-teso{
+        display: initial;
+    }
+    .menu li:hover ul {
+        display: initial;
+    }
+}
+@media screen  and (max-width:1000px) {
+    .container-carousel{
+        width: 100%;
+    }
+    .main-navbar{
+        flex-direction: column;
+        width: 100%;
+        
+    }
+    .menu-vertical2{
+        width: 100%;
+        position: absolute;
+        left: 0;
+    }
+    .menu{
+        width: 100%;
+        font-size: 15px;
+    }
+    h1{
+        width: 100%;
+        height: 15px;
+        font-size: 15px;
+        
+    }
+    iframe{
+        width: 100%;
+    }
+    .articulo{
+        width: 100%;
+
+    }
+    .articulo{
+        flex-direction: column;
+        align-content: center;
+    }
+    .info{
+        flex-grow: 1;
+        flex-wrap: wrap;
+    }
+    .articulo .articulo2 h2{
+        height: 25px;
+        margin: 10px 10px;
+    }
+    .articulo .articulo2 p{
+        width: 95%;
+        font-size: 12px;
+        margin: 10px 10px ;
+    }
+    .articulo2 img{
+        align-items: center;
+        width: 130px;
+        height:150px;
+        margin: 10px 10px;
+    }
+    .linea{
+        margin: 10px;
+    }
+    .linea2{
+        margin: 10px;
+    }
+}
+@media screen  and (max-width:600px) {
+    .container-carousel{
+        width: 100%;
+    }
+    .menu{
+        flex-grow: 1;
+        flex-wrap: wrap;
+    }
+    .main-navbar  .activo{
+        display: block;
+        position: relative;
+    }
+    .main-navbar li a {
+        color: #0d0d0f;
+    }
+}
+/*adaptar a dispositivos moviles fin*/
