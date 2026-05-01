@@ -2,7 +2,11 @@
     "use strict";
 
     const ADMIN_SESSION_KEY = "totoltepec.transparencia.admin";
-    const DATA_KEY = "totoltepec.transparencia.data.v2";
+    const DATA_KEY = "totoltepec.transparencia.data.v3";
+    const LEGACY_DATA_KEYS = [
+        "totoltepec.transparencia.data.v3",
+        "totoltepec.transparencia.data.v2"
+    ];
     const PDF_KEY = "totoltepec.transparencia.pdfs.v2";
 
     let data = null;
@@ -17,16 +21,17 @@
         }
 
         isAdmin = sessionStorage.getItem(ADMIN_SESSION_KEY) === "1";
-        data = loadJson(DATA_KEY);
+        data = loadData();
 
         if (!isAdmin && !data) {
             return;
         }
 
         if (!data) {
-            data = parseTransparencia(info);
+            data = normalizeData(parseTransparencia(info));
         }
 
+        data = normalizeData(data);
         pdfs = mergePdfs(loadJson(PDF_KEY) || [], collectPdfs(data.nodes));
 
         render(info);
@@ -88,6 +93,64 @@
         return parsed;
     }
 
+    function loadData() {
+        for (let index = 0; index < LEGACY_DATA_KEYS.length; index += 1) {
+            const stored = loadJson(LEGACY_DATA_KEYS[index]);
+
+            if (stored) {
+                return normalizeData(stored);
+            }
+        }
+
+        return null;
+    }
+
+    function normalizeData(raw) {
+        const source = raw || {};
+
+        return {
+            introHtml: typeof source.introHtml === "string" ? source.introHtml : "",
+            nodes: normalizeNodes(source.nodes)
+        };
+    }
+
+    function normalizeNodes(nodes) {
+        return Array.isArray(nodes) ? nodes.map(normalizeNode).filter(Boolean) : [];
+    }
+
+    function normalizeNode(node) {
+        if (!node || typeof node !== "object") {
+            return null;
+        }
+
+        return {
+            id: node.id || createId(),
+            title: cleanText(node.title),
+            data: cleanText(node.data),
+            children: normalizeNodes(node.children),
+            documents: normalizeDocuments(node.documents)
+        };
+    }
+
+    function normalizeDocuments(documents) {
+        return Array.isArray(documents) ? documents.map(normalizeDocument).filter(Boolean) : [];
+    }
+
+    function normalizeDocument(documentItem) {
+        if (!documentItem || typeof documentItem !== "object") {
+            return null;
+        }
+
+        const href = cleanPath(documentItem.data || documentItem.href || "");
+
+        return {
+            id: documentItem.id || createId(),
+            title: cleanText(documentItem.title) || getFileName(href) || "DOCUMENTO",
+            data: href,
+            href: href
+        };
+    }
+
     function getOrgaTitle(element) {
         const title = element.querySelector(".organigrama");
         return cleanText(title ? title.textContent : element.textContent);
@@ -138,6 +201,7 @@
         node.documents.push({
             id: createId(),
             title: title,
+            data: href,
             href: href
         });
     }
@@ -277,9 +341,7 @@
         const record = createInput("REGISTRO");
         const pdfSelect = createPdfSelect();
         const path = createInput("RUTA PDF");
-        const file = document.createElement("input");
-        file.type = "file";
-        file.accept = "application/pdf,.pdf";
+        const picker = createPdfPicker(path.input, record.input);
 
         form.appendChild(createLabel("ENCABEZADO"));
         form.appendChild(headerSelect);
@@ -295,7 +357,8 @@
         form.appendChild(pdfSelect);
         form.appendChild(path.label);
         form.appendChild(path.input);
-        form.appendChild(file);
+        form.appendChild(picker.button);
+        form.appendChild(picker.input);
         form.appendChild(createSubmit("CREAR"));
 
         function updateNewHeaderVisibility() {
@@ -311,8 +374,24 @@
         }
 
         function updateSublevelOptions() {
+            const noHeader = headerSelect.value === "__sin_encabezado__";
             const headerNode = findNode(headerSelect.value);
             sublevelSelect.innerHTML = "";
+
+            const emptyOption = document.createElement("option");
+            emptyOption.value = "__sin_subnivel__";
+            emptyOption.textContent = "SIN SUBNIVEL";
+            sublevelSelect.appendChild(emptyOption);
+
+            if (noHeader) {
+                sublevelSelect.disabled = true;
+                sublevelSelect.value = "__sin_subnivel__";
+                newSublevel.label.style.display = "none";
+                newSublevel.input.style.display = "none";
+                return;
+            }
+
+            sublevelSelect.disabled = false;
 
             if (headerNode) {
                 headerNode.children.forEach(function(node) {
@@ -329,7 +408,7 @@
             sublevelSelect.appendChild(newOption);
 
             if (!headerNode || !headerNode.children.length) {
-                sublevelSelect.value = "__nuevo__";
+                sublevelSelect.value = "__sin_subnivel__";
             }
 
             updateNewSublevelVisibility();
@@ -345,36 +424,50 @@
         updateNewHeaderVisibility();
         updateSublevelOptions();
 
-        file.addEventListener("change", function() {
-            if (file.files && file.files[0]) {
-                path.input.value = "pdf/" + file.files[0].name;
-
-                if (!record.input.value) {
-                    record.input.value = file.files[0].name.replace(/\.pdf$/i, "");
-                }
-            }
-        });
-
         form.addEventListener("submit", function(event) {
             event.preventDefault();
-            const headerNode = headerSelect.value === "__nuevo__" ? null : findNode(headerSelect.value);
-            const headerTitle = headerNode ? headerNode.title : cleanText(newHeader.input.value);
-            const sublevelNode = sublevelSelect.value === "__nuevo__" ? null : findNode(sublevelSelect.value);
-            const sublevelTitle = sublevelNode ? sublevelNode.title : cleanText(newSublevel.input.value);
+            const withoutHeader = headerSelect.value === "__sin_encabezado__";
+            const headerNode = !withoutHeader && headerSelect.value !== "__nuevo__" ? findNode(headerSelect.value) : null;
+            const headerTitle = withoutHeader ? "" : (headerNode ? headerNode.title : cleanText(newHeader.input.value));
+            const withoutSublevel = withoutHeader || sublevelSelect.value === "__sin_subnivel__";
+            const sublevelNode = !withoutSublevel && sublevelSelect.value !== "__nuevo__" ? findNode(sublevelSelect.value) : null;
+            const sublevelTitle = withoutSublevel ? "" : (sublevelNode ? sublevelNode.title : cleanText(newSublevel.input.value));
             const recordTitle = cleanText(record.input.value);
             const href = cleanPath(path.input.value || pdfSelect.value);
 
-            if (!headerTitle || !sublevelTitle || !recordTitle) {
-                alert("ESCRIBE ENCABEZADO, SUBNIVEL Y REGISTRO");
+            if (!recordTitle) {
+                alert("ESCRIBE EL REGISTRO");
                 return;
             }
 
-            const finalHeaderNode = headerNode || findTopNodeByTitle(headerTitle) || createTopNode(headerTitle);
-            const finalSublevelNode = sublevelNode || findDirectChildByTitle(finalHeaderNode, sublevelTitle) || createChildNode(finalHeaderNode, sublevelTitle);
+            let targetNode = null;
 
-            finalSublevelNode.documents.push({
+            if (withoutHeader) {
+                targetNode = ensureGeneral(data.nodes);
+            } else {
+                if (!headerTitle) {
+                    alert("ESCRIBE O SELECCIONA UN ENCABEZADO");
+                    return;
+                }
+
+                const finalHeaderNode = headerNode || findTopNodeByTitle(headerTitle) || createTopNode(headerTitle);
+
+                if (withoutSublevel) {
+                    targetNode = finalHeaderNode;
+                } else {
+                    if (!sublevelTitle) {
+                        alert("ESCRIBE O SELECCIONA UN SUBNIVEL");
+                        return;
+                    }
+
+                    targetNode = sublevelNode || findDirectChildByTitle(finalHeaderNode, sublevelTitle) || createChildNode(finalHeaderNode, sublevelTitle);
+                }
+            }
+
+            targetNode.documents.push({
                 id: createId(),
                 title: recordTitle,
+                data: href,
                 href: href
             });
 
@@ -506,49 +599,39 @@
 
     function buildAddRecordForm() {
         const form = createFormTitle("AGREGAR REGISTRO");
-        const sublevel = createSublevelSelect();
+        const target = createRecordTargetSelect();
         const record = createInput("REGISTRO");
         const pdfSelect = createPdfSelect();
         const path = createInput("RUTA PDF");
-        const file = document.createElement("input");
-        file.type = "file";
-        file.accept = "application/pdf,.pdf";
+        const picker = createPdfPicker(path.input, record.input);
 
-        form.appendChild(createLabel("SUBNIVEL"));
-        form.appendChild(sublevel);
+        form.appendChild(createLabel("DESTINO"));
+        form.appendChild(target);
         form.appendChild(record.label);
         form.appendChild(record.input);
         form.appendChild(createLabel("PDF EXISTENTE"));
         form.appendChild(pdfSelect);
         form.appendChild(path.label);
         form.appendChild(path.input);
-        form.appendChild(file);
+        form.appendChild(picker.button);
+        form.appendChild(picker.input);
         form.appendChild(createSubmit("AGREGAR REGISTRO"));
-
-        file.addEventListener("change", function() {
-            if (file.files && file.files[0]) {
-                path.input.value = "pdf/" + file.files[0].name;
-
-                if (!record.input.value) {
-                    record.input.value = file.files[0].name.replace(/\.pdf$/i, "");
-                }
-            }
-        });
 
         form.addEventListener("submit", function(event) {
             event.preventDefault();
-            const sublevelNode = findNode(sublevel.value);
+            const sublevelNode = findNode(target.value);
             const title = cleanText(record.input.value);
             const href = cleanPath(path.input.value || pdfSelect.value);
 
             if (!sublevelNode || !title) {
-                alert("SELECCIONA UN SUBNIVEL Y ESCRIBE EL REGISTRO");
+                alert("SELECCIONA EL DESTINO Y ESCRIBE EL REGISTRO");
                 return;
             }
 
             sublevelNode.documents.push({
                 id: createId(),
                 title: title,
+                data: href,
                 href: href
             });
 
@@ -625,6 +708,7 @@
         const target = createDocumentSelect();
         const name = createInput("NUEVO NOMBRE");
         const path = createInput("RUTA PDF");
+        const picker = createPdfPicker(path.input, name.input);
 
         form.appendChild(createLabel("REGISTRO"));
         form.appendChild(target);
@@ -632,6 +716,8 @@
         form.appendChild(name.input);
         form.appendChild(path.label);
         form.appendChild(path.input);
+        form.appendChild(picker.button);
+        form.appendChild(picker.input);
         form.appendChild(createSubmit("EDITAR REGISTRO"));
 
         target.addEventListener("change", function() {
@@ -655,6 +741,7 @@
 
             found.document.title = title;
             found.document.href = cleanPath(path.input.value);
+            found.document.data = found.document.href;
 
             if (found.document.href) {
                 addPdf(found.document.title, found.document.href);
@@ -761,25 +848,15 @@
         const form = createFormTitle("REGISTRAR PDF");
         const name = createInput("NOMBRE");
         const path = createInput("RUTA PDF");
-        const file = document.createElement("input");
-        file.type = "file";
-        file.accept = "application/pdf,.pdf";
+        const picker = createPdfPicker(path.input, name.input);
 
         form.appendChild(name.label);
         form.appendChild(name.input);
         form.appendChild(path.label);
         form.appendChild(path.input);
-        form.appendChild(file);
+        form.appendChild(picker.button);
+        form.appendChild(picker.input);
         form.appendChild(createSubmit("REGISTRAR PDF"));
-
-        file.addEventListener("change", function() {
-            if (file.files && file.files[0]) {
-                path.input.value = "pdf/" + file.files[0].name;
-                if (!name.input.value) {
-                    name.input.value = file.files[0].name.replace(/\.pdf$/i, "");
-                }
-            }
-        });
 
         form.addEventListener("submit", function(event) {
             event.preventDefault();
@@ -803,12 +880,13 @@
             const category = document.createElement("div");
             category.className = isAdmin ? "pdf trans-node-row trans-node-row--header" : "pdf";
             category.id = "conac";
+            category.dataset.depth = String(depth);
             const title = document.createElement("p");
             title.textContent = node.title;
             category.appendChild(title);
 
             if (isAdmin) {
-                category.appendChild(createNodeActions(node, "encabezado"));
+                category.appendChild(createNodeActions(node, "encabezado", depth));
             }
 
             container.appendChild(category);
@@ -822,6 +900,8 @@
 
         const header = document.createElement("div");
         header.className = isAdmin ? "orga trans-node-row trans-node-row--sublevel" : "orga";
+        header.dataset.depth = String(depth);
+        header.classList.add("trans-level-header", "trans-level-header--" + Math.min(depth, 3));
 
         const title = document.createElement("a");
         title.className = "organigrama";
@@ -837,6 +917,8 @@
 
         const body = document.createElement("div");
         body.className = "pdf";
+        body.dataset.depth = String(depth);
+        body.classList.add("trans-level-body", "trans-level-body--" + Math.min(depth, 3));
         body.style.display = "none";
         hide.style.display = "none";
 
@@ -854,7 +936,7 @@
 
         header.appendChild(title);
         if (isAdmin) {
-            header.appendChild(createNodeActions(node, "subnivel"));
+            header.appendChild(createNodeActions(node, depth === 1 ? "subnivel" : "titulo", depth));
         }
         header.appendChild(show);
         header.appendChild(hide);
@@ -873,10 +955,11 @@
             if (isAdmin) {
                 const row = document.createElement("div");
                 row.className = "trans-record-row";
+                const href = cleanPath(documentItem.data || documentItem.href || "");
 
-                if (documentItem.href) {
+                if (href) {
                     const link = document.createElement("a");
-                    link.href = documentItem.href;
+                    link.href = href;
                     const text = document.createElement("p");
                     text.textContent = documentItem.title;
                     link.appendChild(text);
@@ -892,9 +975,9 @@
                 return;
             }
 
-            if (documentItem.href) {
+            if (cleanPath(documentItem.data || documentItem.href || "")) {
                 const link = document.createElement("a");
-                link.href = documentItem.href;
+                link.href = cleanPath(documentItem.data || documentItem.href || "");
                 const text = document.createElement("p");
                 text.textContent = documentItem.title;
                 link.appendChild(text);
@@ -908,7 +991,7 @@
         });
     }
 
-    function createNodeActions(node, type) {
+    function createNodeActions(node, type, depth) {
         const actions = document.createElement("div");
         actions.className = "trans-admin-actions";
 
@@ -930,6 +1013,11 @@
         create.addEventListener("click", function() {
             if (type === "encabezado") {
                 createSublevelFromPrompt(node);
+                return;
+            }
+
+            if (type === "subnivel" && depth === 1) {
+                createRecordGroupFromPrompt(node);
                 return;
             }
 
@@ -1020,18 +1108,64 @@
         rerender();
     }
 
-    function createRecordFromPrompt(parent) {
-        const title = cleanText(prompt("NOMBRE DEL REGISTRO"));
+    async function createRecordGroupFromPrompt(parent) {
+        const groupTitle = cleanText(prompt("TITULO DEL REGISTRO (OPCIONAL)", ""));
+        const title = cleanText(prompt("NOMBRE DEL REGISTRO", ""));
+
+        if (!groupTitle && !title) {
+            return;
+        }
+
+        if (groupTitle && !title) {
+            alert("ESCRIBE EL NOMBRE DEL REGISTRO");
+            return;
+        }
+
+        const href = await pickPdfPath();
+
+        if (groupTitle) {
+            let groupNode = findDirectChildByTitle(parent, groupTitle);
+
+            if (!groupNode) {
+                groupNode = createChildNode(parent, groupTitle);
+            }
+
+            groupNode.documents.push({
+                id: createId(),
+                title: title,
+                data: href,
+                href: href
+            });
+        } else {
+            parent.documents.push({
+                id: createId(),
+                title: title,
+                data: href,
+                href: href
+            });
+        }
+
+        if (href) {
+            addPdf(title, href);
+        }
+
+        saveData();
+        rerender();
+    }
+
+    async function createRecordFromPrompt(parent) {
+        const title = cleanText(prompt("NOMBRE DEL REGISTRO", ""));
 
         if (!title) {
             return;
         }
 
-        const href = cleanPath(prompt("RUTA DEL PDF (OPCIONAL)", ""));
+        const href = await pickPdfPath();
 
         parent.documents.push({
             id: createId(),
             title: title,
+            data: href,
             href: href
         });
 
@@ -1058,7 +1192,9 @@
     function deleteNodeWithConfirm(node, type) {
         const message = type === "encabezado"
             ? "BORRAR EL ENCABEZADO " + node.title + "? SE BORRARAN SUS SUBNIVELES Y REGISTROS."
-            : "BORRAR EL SUBNIVEL " + node.title + "? SE BORRARAN SUS REGISTROS.";
+            : type === "subnivel"
+                ? "BORRAR EL SUBNIVEL " + node.title + "? SE BORRARAN SUS REGISTROS."
+                : "BORRAR EL TITULO " + node.title + "? SE BORRARAN SUS REGISTROS.";
 
         if (!confirm(message + " NO SE BORRAN LOS PDF.")) {
             return;
@@ -1113,9 +1249,16 @@
     }
 
     function createInput(labelText) {
+        const input = document.createElement("input");
+
+        if (labelText === "RUTA PDF") {
+            input.readOnly = true;
+            input.placeholder = "Selecciona un PDF";
+        }
+
         return {
             label: createLabel(labelText),
-            input: document.createElement("input")
+            input: input
         };
     }
 
@@ -1124,6 +1267,87 @@
         button.type = "submit";
         button.textContent = text;
         return button;
+    }
+
+    function createPdfPicker(pathInput, titleInput) {
+        const input = document.createElement("input");
+        const button = document.createElement("button");
+
+        input.type = "file";
+        input.accept = "application/pdf,.pdf";
+        input.style.display = "none";
+
+        button.type = "button";
+        button.textContent = "SELECCIONAR PDF";
+
+        pathInput.addEventListener("click", function() {
+            input.click();
+        });
+
+        button.addEventListener("click", function() {
+            input.click();
+        });
+
+        input.addEventListener("change", function() {
+            applySelectedPdf(input, pathInput, titleInput);
+        });
+
+        return {
+            input: input,
+            button: button
+        };
+    }
+
+    function applySelectedPdf(fileInput, pathInput, titleInput) {
+        if (!fileInput.files || !fileInput.files[0]) {
+            return;
+        }
+
+        pathInput.value = "pdf/" + fileInput.files[0].name;
+
+        if (titleInput && !cleanText(titleInput.value)) {
+            titleInput.value = fileInput.files[0].name.replace(/\.pdf$/i, "");
+        }
+    }
+
+    function pickPdfPath() {
+        return new Promise(function(resolve) {
+            const picker = createPdfPicker(document.createElement("input"), null);
+            const input = picker.input;
+            let resolved = false;
+
+            function finish(value) {
+                if (resolved) {
+                    return;
+                }
+
+                resolved = true;
+                window.removeEventListener("focus", handleFocus);
+                input.remove();
+                resolve(cleanPath(value));
+            }
+
+            function handleFocus() {
+                window.setTimeout(function() {
+                    if (!resolved && (!input.files || !input.files.length)) {
+                        finish("");
+                    }
+                }, 300);
+            }
+
+            input.addEventListener("change", function() {
+                const file = input.files && input.files[0];
+                finish(file ? "pdf/" + file.name : "");
+            });
+
+            input.addEventListener("cancel", function() {
+                finish("");
+            });
+
+            document.body.appendChild(input);
+            window.addEventListener("focus", handleFocus);
+            input.click();
+        });
     }
 
     function createNodeSelect(includeRoot) {
@@ -1148,6 +1372,11 @@
 
     function createHeaderChoiceSelect() {
         const select = document.createElement("select");
+
+        const emptyOption = document.createElement("option");
+        emptyOption.value = "__sin_encabezado__";
+        emptyOption.textContent = "SIN ENCABEZADO";
+        select.appendChild(emptyOption);
 
         data.nodes.forEach(function(node) {
             const option = document.createElement("option");
@@ -1192,6 +1421,19 @@
             const option = document.createElement("option");
             option.value = item.node.id;
             option.textContent = repeatText("-- ", item.depth - 1) + item.node.title;
+            select.appendChild(option);
+        });
+
+        return select;
+    }
+
+    function createRecordTargetSelect() {
+        const select = document.createElement("select");
+
+        flattenNodes(data.nodes).forEach(function(item) {
+            const option = document.createElement("option");
+            option.value = item.node.id;
+            option.textContent = repeatText("-- ", item.depth) + item.node.title;
             select.appendChild(option);
         });
 
@@ -1361,10 +1603,12 @@
     function collectPdfs(nodes) {
         return nodes.reduce(function(list, node) {
             node.documents.forEach(function(documentItem) {
-                if (documentItem.href) {
+                const href = cleanPath(documentItem.data || documentItem.href || "");
+
+                if (href) {
                     list.push({
                         title: documentItem.title,
-                        href: documentItem.href
+                        href: href
                     });
                 }
             });
@@ -1427,6 +1671,7 @@
         return {
             id: createId(),
             title: title,
+            data: "",
             children: [],
             documents: []
         };
@@ -1447,6 +1692,7 @@
 
     function saveData() {
         localStorage.setItem(DATA_KEY, JSON.stringify(data));
+        localStorage.setItem("totoltepec.transparencia.data.v2", JSON.stringify(data));
         savePdfs();
     }
 
