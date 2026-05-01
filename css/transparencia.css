@@ -626,29 +626,73 @@ h4{
     flex: 1 1 auto;
 }
 
+.trans-pdf-browser__breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-height: 34px;
+}
+
+.trans-pdf-browser__crumb,
+.trans-pdf-browser__crumb-sep {
+    color: #dfe6ff;
+    font-size: 14px;
+}
+
+.trans-pdf-browser__crumb {
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+}
+
 .trans-pdf-browser__list {
     overflow: auto;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+    align-content: start;
     gap: 6px;
     padding-right: 4px;
 }
 
 .trans-pdf-browser__item {
     width: 100%;
-    min-height: 42px;
-    padding: 8px 12px;
-    text-align: left;
+    min-height: 92px;
+    padding: 10px 8px;
+    text-align: center;
     border: 1px solid rgba(233, 236, 255, 0.12);
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.05);
     color: #f1f1f7;
     overflow-wrap: anywhere;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
 }
 
 .trans-pdf-browser__item.is-selected {
     border-color: #80cbc4;
     background: rgba(128, 203, 196, 0.16);
+}
+
+.trans-pdf-browser__item--up {
+    justify-content: center;
+}
+
+.trans-pdf-browser__icon {
+    font-size: 38px;
+    line-height: 1;
+}
+
+.trans-pdf-browser__icon--folder {
+    color: #87b8ff;
+}
+
+.trans-pdf-browser__icon--file {
+    color: #ff7a7a;
 }
 
 .trans-pdf-browser__preview {

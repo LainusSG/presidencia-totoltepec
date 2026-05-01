@@ -1433,6 +1433,7 @@
             const header = document.createElement("div");
             const title = document.createElement("h4");
             const search = document.createElement("input");
+            const breadcrumb = document.createElement("div");
             const content = document.createElement("div");
             const list = document.createElement("div");
             const preview = document.createElement("iframe");
@@ -1440,8 +1441,9 @@
             const cancel = document.createElement("button");
             const clear = document.createElement("button");
             const use = document.createElement("button");
-            const availablePdfs = getAvailablePdfOptions();
+            const tree = buildPdfTree(getAvailablePdfOptions());
             let selectedHref = cleanPath(initialHref);
+            let currentPath = findPathForHref(tree, selectedHref);
 
             overlay.className = "trans-pdf-browser";
             dialog.className = "trans-pdf-browser__dialog";
@@ -1449,7 +1451,8 @@
             title.textContent = "SELECCIONAR PDF";
             search.className = "trans-pdf-browser__search";
             search.type = "search";
-            search.placeholder = "Buscar PDF...";
+            search.placeholder = "Buscar en esta carpeta...";
+            breadcrumb.className = "trans-pdf-browser__breadcrumb";
             content.className = "trans-pdf-browser__content";
             list.className = "trans-pdf-browser__list";
             preview.className = "trans-pdf-browser__preview";
@@ -1467,19 +1470,79 @@
                 resolve(value);
             }
 
+            function renderBreadcrumb() {
+                breadcrumb.innerHTML = "";
+
+                const rootButton = document.createElement("button");
+                rootButton.type = "button";
+                rootButton.className = "trans-pdf-browser__crumb";
+                rootButton.textContent = "pdf";
+                rootButton.addEventListener("click", function() {
+                    currentPath = [];
+                    renderList();
+                });
+                breadcrumb.appendChild(rootButton);
+
+                currentPath.forEach(function(part, index) {
+                    const sep = document.createElement("span");
+                    sep.className = "trans-pdf-browser__crumb-sep";
+                    sep.textContent = "/";
+                    breadcrumb.appendChild(sep);
+
+                    const button = document.createElement("button");
+                    button.type = "button";
+                    button.className = "trans-pdf-browser__crumb";
+                    button.textContent = part;
+                    button.addEventListener("click", function() {
+                        currentPath = currentPath.slice(0, index + 1);
+                        renderList();
+                    });
+                    breadcrumb.appendChild(button);
+                });
+            }
+
             function renderList() {
                 const query = normalizeForCompare(search.value);
-                list.innerHTML = "";
+                const node = getTreeNode(tree, currentPath);
+                const entries = getTreeEntries(node).filter(function(item) {
+                    return !query || normalizeForCompare(item.name).indexOf(query) !== -1;
+                });
 
-                availablePdfs.filter(function(item) {
-                    return !query || normalizeForCompare(item.title + " " + item.href).indexOf(query) !== -1;
-                }).forEach(function(item) {
+                list.innerHTML = "";
+                renderBreadcrumb();
+
+                if (currentPath.length) {
                     const option = document.createElement("button");
                     option.type = "button";
-                    option.className = "trans-pdf-browser__item" + (item.href === selectedHref ? " is-selected" : "");
-                    option.textContent = item.href;
-                    option.title = item.title;
+                    option.className = "trans-pdf-browser__item trans-pdf-browser__item--up";
+                    option.innerHTML = '<i class="bx bx-arrow-back"></i><span>..</span>';
                     option.addEventListener("click", function() {
+                        currentPath = currentPath.slice(0, -1);
+                        renderList();
+                    });
+                    list.appendChild(option);
+                }
+
+                entries.forEach(function(item) {
+                    const option = document.createElement("button");
+                    const icon = document.createElement("i");
+                    const label = document.createElement("span");
+
+                    option.type = "button";
+                    option.className = "trans-pdf-browser__item" + (item.type === "file" && item.href === selectedHref ? " is-selected" : "");
+                    icon.className = item.type === "folder" ? "bx bxs-folder trans-pdf-browser__icon trans-pdf-browser__icon--folder" : "bx bxs-file-pdf trans-pdf-browser__icon trans-pdf-browser__icon--file";
+                    label.textContent = item.name;
+                    option.appendChild(icon);
+                    option.appendChild(label);
+                    option.title = item.type === "file" ? item.href : item.name;
+                    option.addEventListener("click", function() {
+                        if (item.type === "folder") {
+                            currentPath = currentPath.concat(item.name);
+                            search.value = "";
+                            renderList();
+                            return;
+                        }
+
                         selectedHref = item.href;
                         preview.src = item.href;
                         renderList();
@@ -1510,6 +1573,7 @@
 
             header.appendChild(title);
             header.appendChild(search);
+            dialog.appendChild(breadcrumb);
             content.appendChild(list);
             content.appendChild(preview);
             actions.appendChild(cancel);
@@ -1537,6 +1601,71 @@
             }),
             pdfs
         );
+    }
+
+    function buildPdfTree(items) {
+        const root = { name: "pdf", folders: {}, files: [] };
+
+        items.forEach(function(item) {
+            const href = cleanPath(item.href);
+            const parts = href.split("/").filter(Boolean);
+
+            if (!parts.length) {
+                return;
+            }
+
+            let node = root;
+            const folderParts = parts[0].toLowerCase() === "pdf" ? parts.slice(1, -1) : parts.slice(0, -1);
+
+            folderParts.forEach(function(part) {
+                if (!node.folders[part]) {
+                    node.folders[part] = { name: part, folders: {}, files: [] };
+                }
+
+                node = node.folders[part];
+            });
+
+            node.files.push({
+                type: "file",
+                name: item.title || getFileName(href) || href.split("/").pop(),
+                href: href
+            });
+        });
+
+        return root;
+    }
+
+    function getTreeNode(root, path) {
+        return (path || []).reduce(function(node, part) {
+            return node && node.folders[part] ? node.folders[part] : node;
+        }, root);
+    }
+
+    function getTreeEntries(node) {
+        const folders = Object.keys(node.folders).sort(function(a, b) {
+            return a.localeCompare(b);
+        }).map(function(name) {
+            return {
+                type: "folder",
+                name: name
+            };
+        });
+        const files = node.files.slice().sort(function(a, b) {
+            return a.name.localeCompare(b.name);
+        });
+
+        return folders.concat(files);
+    }
+
+    function findPathForHref(root, href) {
+        const target = cleanPath(href);
+
+        if (!target) {
+            return [];
+        }
+
+        const parts = target.split("/").filter(Boolean);
+        return parts[0] && parts[0].toLowerCase() === "pdf" ? parts.slice(1, -1) : parts.slice(0, -1);
     }
 
     function createNodeSelect(includeRoot) {
