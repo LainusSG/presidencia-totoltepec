@@ -3144,6 +3144,15 @@
     <script src="main.js"></script>
     <script src="pdf-manifest.js"></script>
     <script src="transparencia-admin.js"></script>
+    <script>
+        // Generar tooltips automáticamente para los nombres de archivos
+        document.querySelectorAll('.pdf a').forEach(link => {
+            const pElement = link.querySelector('p');
+            if (pElement && !link.hasAttribute('title')) {
+                link.setAttribute('title', pElement.textContent.trim());
+            }
+        });
+    </script>
 </body>
 
 </html>
