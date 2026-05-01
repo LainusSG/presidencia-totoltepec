@@ -339,9 +339,6 @@
         const sublevelSelect = document.createElement("select");
         const newSublevel = createInput("NUEVO SUBNIVEL");
         const record = createInput("REGISTRO");
-        const pdfSelect = createPdfSelect();
-        const path = createInput("RUTA PDF");
-        const picker = createPdfPicker(path.input, record.input);
 
         form.appendChild(createLabel("ENCABEZADO"));
         form.appendChild(headerSelect);
@@ -353,12 +350,6 @@
         form.appendChild(newSublevel.input);
         form.appendChild(record.label);
         form.appendChild(record.input);
-        form.appendChild(createLabel("PDF EXISTENTE"));
-        form.appendChild(pdfSelect);
-        form.appendChild(path.label);
-        form.appendChild(path.input);
-        form.appendChild(picker.button);
-        form.appendChild(picker.input);
         form.appendChild(createSubmit("CREAR"));
 
         function updateNewHeaderVisibility() {
@@ -424,7 +415,7 @@
         updateNewHeaderVisibility();
         updateSublevelOptions();
 
-        form.addEventListener("submit", function(event) {
+        form.addEventListener("submit", async function(event) {
             event.preventDefault();
             const withoutHeader = headerSelect.value === "__sin_encabezado__";
             const headerNode = !withoutHeader && headerSelect.value !== "__nuevo__" ? findNode(headerSelect.value) : null;
@@ -433,7 +424,6 @@
             const sublevelNode = !withoutSublevel && sublevelSelect.value !== "__nuevo__" ? findNode(sublevelSelect.value) : null;
             const sublevelTitle = withoutSublevel ? "" : (sublevelNode ? sublevelNode.title : cleanText(newSublevel.input.value));
             const recordTitle = cleanText(record.input.value);
-            const href = cleanPath(path.input.value || pdfSelect.value);
 
             if (!recordTitle) {
                 alert("ESCRIBE EL REGISTRO");
@@ -462,6 +452,12 @@
 
                     targetNode = sublevelNode || findDirectChildByTitle(finalHeaderNode, sublevelTitle) || createChildNode(finalHeaderNode, sublevelTitle);
                 }
+            }
+
+            const href = await openPdfBrowser();
+
+            if (href === null) {
+                return;
             }
 
             targetNode.documents.push({
@@ -601,30 +597,26 @@
         const form = createFormTitle("AGREGAR REGISTRO");
         const target = createRecordTargetSelect();
         const record = createInput("REGISTRO");
-        const pdfSelect = createPdfSelect();
-        const path = createInput("RUTA PDF");
-        const picker = createPdfPicker(path.input, record.input);
 
         form.appendChild(createLabel("DESTINO"));
         form.appendChild(target);
         form.appendChild(record.label);
         form.appendChild(record.input);
-        form.appendChild(createLabel("PDF EXISTENTE"));
-        form.appendChild(pdfSelect);
-        form.appendChild(path.label);
-        form.appendChild(path.input);
-        form.appendChild(picker.button);
-        form.appendChild(picker.input);
         form.appendChild(createSubmit("AGREGAR REGISTRO"));
 
-        form.addEventListener("submit", function(event) {
+        form.addEventListener("submit", async function(event) {
             event.preventDefault();
             const sublevelNode = findNode(target.value);
             const title = cleanText(record.input.value);
-            const href = cleanPath(path.input.value || pdfSelect.value);
 
             if (!sublevelNode || !title) {
                 alert("SELECCIONA EL DESTINO Y ESCRIBE EL REGISTRO");
+                return;
+            }
+
+            const href = await openPdfBrowser();
+
+            if (href === null) {
                 return;
             }
 
@@ -707,17 +699,11 @@
         const form = createFormTitle("EDITAR REGISTRO");
         const target = createDocumentSelect();
         const name = createInput("NUEVO NOMBRE");
-        const path = createInput("RUTA PDF");
-        const picker = createPdfPicker(path.input, name.input);
 
         form.appendChild(createLabel("REGISTRO"));
         form.appendChild(target);
         form.appendChild(name.label);
         form.appendChild(name.input);
-        form.appendChild(path.label);
-        form.appendChild(path.input);
-        form.appendChild(picker.button);
-        form.appendChild(picker.input);
         form.appendChild(createSubmit("EDITAR REGISTRO"));
 
         target.addEventListener("change", function() {
@@ -725,11 +711,10 @@
 
             if (doc) {
                 name.input.value = doc.document.title;
-                path.input.value = doc.document.href;
             }
         });
 
-        form.addEventListener("submit", function(event) {
+        form.addEventListener("submit", async function(event) {
             event.preventDefault();
             const found = findDocumentBySelectValue(target.value);
             const title = cleanText(name.input.value);
@@ -739,8 +724,14 @@
                 return;
             }
 
+            const href = await openPdfBrowser(found.document.href);
+
+            if (href === null) {
+                return;
+            }
+
             found.document.title = title;
-            found.document.href = cleanPath(path.input.value);
+            found.document.href = href;
             found.document.data = found.document.href;
 
             if (found.document.href) {
@@ -847,23 +838,21 @@
     function buildPdfForm() {
         const form = createFormTitle("REGISTRAR PDF");
         const name = createInput("NOMBRE");
-        const path = createInput("RUTA PDF");
-        const picker = createPdfPicker(path.input, name.input);
 
         form.appendChild(name.label);
         form.appendChild(name.input);
-        form.appendChild(path.label);
-        form.appendChild(path.input);
-        form.appendChild(picker.button);
-        form.appendChild(picker.input);
         form.appendChild(createSubmit("REGISTRAR PDF"));
 
-        form.addEventListener("submit", function(event) {
+        form.addEventListener("submit", async function(event) {
             event.preventDefault();
-            const href = cleanPath(path.input.value);
+            const href = await openPdfBrowser();
+
+            if (href === null) {
+                return;
+            }
 
             if (!href) {
-                alert("ESCRIBE LA RUTA DEL PDF");
+                alert("SELECCIONA UN PDF");
                 return;
             }
 
@@ -1121,7 +1110,11 @@
             return;
         }
 
-        const href = await pickPdfPath();
+        const href = await openPdfBrowser();
+
+        if (href === null) {
+            return;
+        }
 
         if (groupTitle) {
             let groupNode = findDirectChildByTitle(parent, groupTitle);
@@ -1160,7 +1153,11 @@
             return;
         }
 
-        const href = await pickPdfPath();
+        const href = await openPdfBrowser();
+
+        if (href === null) {
+            return;
+        }
 
         parent.documents.push({
             id: createId(),
@@ -1205,14 +1202,22 @@
         rerender();
     }
 
-    function editDocumentName(parent, documentItem) {
+    async function editDocumentName(parent, documentItem) {
         const title = cleanText(prompt("NUEVO NOMBRE DEL REGISTRO", documentItem.title));
 
         if (!parent || !title) {
             return;
         }
 
+        const href = await openPdfBrowser(documentItem.href);
+
+        if (href === null) {
+            return;
+        }
+
         documentItem.title = title;
+        documentItem.href = href;
+        documentItem.data = href;
         saveData();
         rerender();
     }
@@ -1251,11 +1256,6 @@
     function createInput(labelText) {
         const input = document.createElement("input");
 
-        if (labelText === "RUTA PDF") {
-            input.readOnly = true;
-            input.placeholder = "Selecciona un PDF";
-        }
-
         return {
             label: createLabel(labelText),
             input: input
@@ -1269,85 +1269,117 @@
         return button;
     }
 
-    function createPdfPicker(pathInput, titleInput) {
-        const input = document.createElement("input");
-        const button = document.createElement("button");
-
-        input.type = "file";
-        input.accept = "application/pdf,.pdf";
-        input.style.display = "none";
-
-        button.type = "button";
-        button.textContent = "SELECCIONAR PDF";
-
-        pathInput.addEventListener("click", function() {
-            input.click();
-        });
-
-        button.addEventListener("click", function() {
-            input.click();
-        });
-
-        input.addEventListener("change", function() {
-            applySelectedPdf(input, pathInput, titleInput);
-        });
-
-        return {
-            input: input,
-            button: button
-        };
-    }
-
-    function applySelectedPdf(fileInput, pathInput, titleInput) {
-        if (!fileInput.files || !fileInput.files[0]) {
-            return;
-        }
-
-        pathInput.value = "pdf/" + fileInput.files[0].name;
-
-        if (titleInput && !cleanText(titleInput.value)) {
-            titleInput.value = fileInput.files[0].name.replace(/\.pdf$/i, "");
-        }
-    }
-
-    function pickPdfPath() {
+    function openPdfBrowser(initialHref) {
         return new Promise(function(resolve) {
-            const picker = createPdfPicker(document.createElement("input"), null);
-            const input = picker.input;
-            let resolved = false;
+            const overlay = document.createElement("div");
+            const dialog = document.createElement("div");
+            const header = document.createElement("div");
+            const title = document.createElement("h4");
+            const search = document.createElement("input");
+            const content = document.createElement("div");
+            const list = document.createElement("div");
+            const preview = document.createElement("iframe");
+            const actions = document.createElement("div");
+            const cancel = document.createElement("button");
+            const clear = document.createElement("button");
+            const use = document.createElement("button");
+            const availablePdfs = getAvailablePdfOptions();
+            let selectedHref = cleanPath(initialHref);
+
+            overlay.className = "trans-pdf-browser";
+            dialog.className = "trans-pdf-browser__dialog";
+            header.className = "trans-pdf-browser__header";
+            title.textContent = "SELECCIONAR PDF";
+            search.className = "trans-pdf-browser__search";
+            search.type = "search";
+            search.placeholder = "Buscar PDF...";
+            content.className = "trans-pdf-browser__content";
+            list.className = "trans-pdf-browser__list";
+            preview.className = "trans-pdf-browser__preview";
+            preview.setAttribute("title", "Vista previa de PDF");
+            actions.className = "trans-pdf-browser__actions";
+            cancel.type = "button";
+            cancel.textContent = "CANCELAR";
+            clear.type = "button";
+            clear.textContent = "SIN PDF";
+            use.type = "button";
+            use.textContent = "USAR PDF";
 
             function finish(value) {
-                if (resolved) {
-                    return;
-                }
-
-                resolved = true;
-                window.removeEventListener("focus", handleFocus);
-                input.remove();
-                resolve(cleanPath(value));
+                overlay.remove();
+                resolve(value);
             }
 
-            function handleFocus() {
-                window.setTimeout(function() {
-                    if (!resolved && (!input.files || !input.files.length)) {
-                        finish("");
-                    }
-                }, 300);
+            function renderList() {
+                const query = normalizeForCompare(search.value);
+                list.innerHTML = "";
+
+                availablePdfs.filter(function(item) {
+                    return !query || normalizeForCompare(item.title + " " + item.href).indexOf(query) !== -1;
+                }).forEach(function(item) {
+                    const option = document.createElement("button");
+                    option.type = "button";
+                    option.className = "trans-pdf-browser__item" + (item.href === selectedHref ? " is-selected" : "");
+                    option.textContent = item.href;
+                    option.title = item.title;
+                    option.addEventListener("click", function() {
+                        selectedHref = item.href;
+                        preview.src = item.href;
+                        renderList();
+                    });
+                    list.appendChild(option);
+                });
             }
 
-            input.addEventListener("change", function() {
-                const file = input.files && input.files[0];
-                finish(file ? "pdf/" + file.name : "");
+            search.addEventListener("input", renderList);
+            cancel.addEventListener("click", function() {
+                finish(null);
             });
-
-            input.addEventListener("cancel", function() {
+            clear.addEventListener("click", function() {
                 finish("");
             });
+            use.addEventListener("click", function() {
+                finish(selectedHref || "");
+            });
+            overlay.addEventListener("click", function(event) {
+                if (event.target === overlay) {
+                    finish(null);
+                }
+            });
 
-            document.body.appendChild(input);
-            window.addEventListener("focus", handleFocus);
-            input.click();
+            if (selectedHref) {
+                preview.src = selectedHref;
+            }
+
+            header.appendChild(title);
+            header.appendChild(search);
+            content.appendChild(list);
+            content.appendChild(preview);
+            actions.appendChild(cancel);
+            actions.appendChild(clear);
+            actions.appendChild(use);
+            dialog.appendChild(header);
+            dialog.appendChild(content);
+            dialog.appendChild(actions);
+            overlay.appendChild(dialog);
+            document.body.appendChild(overlay);
+            renderList();
+            search.focus();
         });
+    }
+
+    function getAvailablePdfOptions() {
+        const manifest = Array.isArray(window.TOTOLTEPEC_PDF_MANIFEST) ? window.TOTOLTEPEC_PDF_MANIFEST : [];
+
+        return mergePdfs(
+            manifest.map(function(item) {
+                return {
+                    title: item.title,
+                    href: cleanPath(item.href)
+                };
+            }),
+            pdfs
+        );
     }
 
     function createNodeSelect(includeRoot) {
