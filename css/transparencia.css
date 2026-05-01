@@ -333,38 +333,48 @@ h4{
     min-width: 34px;
     height: 30px;
     padding: 0;
-    border: 1px solid #d8d4de;
+    border: 1px solid rgba(233, 236, 255, 0.32);
     border-radius: 4px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
+    font-size: 20px;
     line-height: 1;
+    background: transparent;
+    box-shadow: none;
 }
 
 .trans-admin-action i {
     pointer-events: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.trans-admin-icon {
+    width: 18px;
+    height: 18px;
 }
 
 .trans-admin-action--edit,
 .trans-admin-action--delete {
-    background-color: #050509;
+    background: transparent;
     color: #f3f3f3;
 }
 
 .trans-admin-action--create {
-    background-color: #75bd2f;
+    background: transparent;
     color: #f3f3f3;
-    border-color: #f3f3f3;
-    border-radius: 50%;
-    font-size: 28px;
+    border-color: rgba(233, 236, 255, 0.32);
+    border-radius: 4px;
+    font-size: 22px;
 }
 
 .trans-admin-action--top {
     width: 40px;
     min-width: 40px;
     height: 40px;
-    font-size: 34px;
+    font-size: 26px;
 }
 
 .trans-node-row > button:not(.trans-admin-action),
@@ -683,7 +693,12 @@ h4{
 }
 
 .trans-pdf-browser__icon {
-    font-size: 38px;
+    font-size: 40px;
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     line-height: 1;
 }
 

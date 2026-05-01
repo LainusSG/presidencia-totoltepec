@@ -1048,15 +1048,15 @@
         button.setAttribute("aria-label", label);
 
         if (icon === "edit") {
-            iconElement.className = "bx bx-edit-alt";
+            iconElement.className = "bi bi-pencil-square trans-admin-icon";
         }
 
         if (icon === "trash") {
-            iconElement.className = "bx bx-trash";
+            iconElement.className = "bi bi-trash3 trans-admin-icon";
         }
 
         if (icon === "plus") {
-            iconElement.className = "bx bx-plus";
+            iconElement.className = "bi bi-plus-lg trans-admin-icon";
         }
 
         button.appendChild(iconElement);
@@ -1513,9 +1513,14 @@
 
                 if (currentPath.length) {
                     const option = document.createElement("button");
+                    const icon = document.createElement("i");
+                    const label = document.createElement("span");
+                    icon.className = "bi bi-arrow-up-circle trans-pdf-browser__icon trans-pdf-browser__icon--up";
                     option.type = "button";
                     option.className = "trans-pdf-browser__item trans-pdf-browser__item--up";
-                    option.innerHTML = '<i class="bx bx-arrow-back"></i><span>..</span>';
+                    label.textContent = "..";
+                    option.appendChild(icon);
+                    option.appendChild(label);
                     option.addEventListener("click", function() {
                         currentPath = currentPath.slice(0, -1);
                         renderList();
@@ -1530,7 +1535,9 @@
 
                     option.type = "button";
                     option.className = "trans-pdf-browser__item" + (item.type === "file" && item.href === selectedHref ? " is-selected" : "");
-                    icon.className = item.type === "folder" ? "bx bxs-folder trans-pdf-browser__icon trans-pdf-browser__icon--folder" : "bx bxs-file-pdf trans-pdf-browser__icon trans-pdf-browser__icon--file";
+                    icon.className = item.type === "folder"
+                        ? "bi bi-folder2-open trans-pdf-browser__icon trans-pdf-browser__icon--folder"
+                        : "bi bi-file-earmark-pdf-fill trans-pdf-browser__icon trans-pdf-browser__icon--file";
                     label.textContent = item.name;
                     option.appendChild(icon);
                     option.appendChild(label);
