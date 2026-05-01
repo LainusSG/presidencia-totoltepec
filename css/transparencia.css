@@ -672,6 +672,83 @@ h4{
     border: 1px solid rgba(233, 236, 255, 0.18);
 }
 
+.trans-dialog {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background: rgba(8, 5, 16, 0.72);
+    box-sizing: border-box;
+}
+
+.trans-dialog__box {
+    width: min(520px, 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 10px;
+    background: rgba(18, 14, 27, 0.98);
+    border: 1px solid rgba(233, 236, 255, 0.18);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+}
+
+.trans-dialog__box h4 {
+    padding: 10px 14px;
+    border-radius: 6px;
+    background: rgba(12, 3, 27, 0.85);
+}
+
+.trans-dialog__body p {
+    margin: 0;
+    padding: 4px 2px;
+    color: #f1f1f7;
+    line-height: 1.45;
+}
+
+.trans-dialog__form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.trans-dialog__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: #f1f1f7;
+}
+
+.trans-dialog__field input {
+    min-height: 40px;
+    padding: 0 12px;
+    border: 1px solid rgba(233, 236, 255, 0.18);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #f1f1f7;
+}
+
+.trans-dialog__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.trans-dialog__button {
+    min-width: 120px;
+    min-height: 38px;
+    border-radius: 6px;
+    border: 1px solid rgba(233, 236, 255, 0.18);
+}
+
+.trans-dialog__button.is-primary {
+    background: #80cbc4;
+    color: #071218;
+}
+
 .orga:hover{
     background-color: #06000893;
     

@@ -1063,15 +1063,18 @@
         return button;
     }
 
-    function createHeaderFromPrompt() {
-        const title = cleanText(prompt("NOMBRE DEL ENCABEZADO"));
+    async function createHeaderFromPrompt() {
+        const values = await openFormModal("CREAR ENCABEZADO", [
+            { id: "title", label: "NOMBRE DEL ENCABEZADO" }
+        ]);
+        const title = values ? values.title : "";
 
         if (!title) {
             return;
         }
 
         if (findTopNodeByTitle(title)) {
-            alert("YA EXISTE UN ENCABEZADO CON ESE NOMBRE");
+            openNoticeModal("YA EXISTE UN ENCABEZADO CON ESE NOMBRE");
             return;
         }
 
@@ -1080,15 +1083,18 @@
         rerender();
     }
 
-    function createSublevelFromPrompt(parent) {
-        const title = cleanText(prompt("NOMBRE DEL SUBNIVEL"));
+    async function createSublevelFromPrompt(parent) {
+        const values = await openFormModal("CREAR SUBNIVEL", [
+            { id: "title", label: "NOMBRE DEL SUBNIVEL" }
+        ]);
+        const title = values ? values.title : "";
 
         if (!title) {
             return;
         }
 
         if (findDirectChildByTitle(parent, title)) {
-            alert("YA EXISTE UN SUBNIVEL CON ESE NOMBRE");
+            openNoticeModal("YA EXISTE UN SUBNIVEL CON ESE NOMBRE");
             return;
         }
 
@@ -1098,15 +1104,19 @@
     }
 
     async function createRecordGroupFromPrompt(parent) {
-        const groupTitle = cleanText(prompt("TITULO DEL REGISTRO (OPCIONAL)", ""));
-        const title = cleanText(prompt("NOMBRE DEL REGISTRO", ""));
+        const values = await openFormModal("CREAR REGISTRO", [
+            { id: "groupTitle", label: "TITULO DEL REGISTRO", optional: true },
+            { id: "title", label: "NOMBRE DEL REGISTRO" }
+        ]);
+        const groupTitle = values ? values.groupTitle : "";
+        const title = values ? values.title : "";
 
         if (!groupTitle && !title) {
             return;
         }
 
         if (groupTitle && !title) {
-            alert("ESCRIBE EL NOMBRE DEL REGISTRO");
+            openNoticeModal("ESCRIBE EL NOMBRE DEL REGISTRO");
             return;
         }
 
@@ -1147,7 +1157,10 @@
     }
 
     async function createRecordFromPrompt(parent) {
-        const title = cleanText(prompt("NOMBRE DEL REGISTRO", ""));
+        const values = await openFormModal("CREAR REGISTRO", [
+            { id: "title", label: "NOMBRE DEL REGISTRO" }
+        ]);
+        const title = values ? values.title : "";
 
         if (!title) {
             return;
@@ -1174,8 +1187,11 @@
         rerender();
     }
 
-    function editNodeName(node, type) {
-        const title = cleanText(prompt("NUEVO NOMBRE DEL " + type.toUpperCase(), node.title));
+    async function editNodeName(node, type) {
+        const values = await openFormModal("EDITAR " + type.toUpperCase(), [
+            { id: "title", label: "NUEVO NOMBRE DEL " + type.toUpperCase(), value: node.title }
+        ]);
+        const title = values ? values.title : "";
 
         if (!title) {
             return;
@@ -1186,14 +1202,14 @@
         rerender();
     }
 
-    function deleteNodeWithConfirm(node, type) {
+    async function deleteNodeWithConfirm(node, type) {
         const message = type === "encabezado"
             ? "BORRAR EL ENCABEZADO " + node.title + "? SE BORRARAN SUS SUBNIVELES Y REGISTROS."
             : type === "subnivel"
                 ? "BORRAR EL SUBNIVEL " + node.title + "? SE BORRARAN SUS REGISTROS."
                 : "BORRAR EL TITULO " + node.title + "? SE BORRARAN SUS REGISTROS.";
 
-        if (!confirm(message + " NO SE BORRAN LOS PDF.")) {
+        if (!await openConfirmModal(message + " NO SE BORRAN LOS PDF.", "BORRAR")) {
             return;
         }
 
@@ -1203,7 +1219,10 @@
     }
 
     async function editDocumentName(parent, documentItem) {
-        const title = cleanText(prompt("NUEVO NOMBRE DEL REGISTRO", documentItem.title));
+        const values = await openFormModal("EDITAR REGISTRO", [
+            { id: "title", label: "NUEVO NOMBRE DEL REGISTRO", value: documentItem.title }
+        ]);
+        const title = values ? values.title : "";
 
         if (!parent || !title) {
             return;
@@ -1222,8 +1241,8 @@
         rerender();
     }
 
-    function deleteDocumentWithConfirm(parent, documentItem) {
-        if (!confirm("BORRAR EL REGISTRO " + documentItem.title + "? NO SE BORRA EL PDF.")) {
+    async function deleteDocumentWithConfirm(parent, documentItem) {
+        if (!await openConfirmModal("BORRAR EL REGISTRO " + documentItem.title + "? NO SE BORRA EL PDF.", "BORRAR REGISTRO")) {
             return;
         }
 
@@ -1267,6 +1286,144 @@
         button.type = "submit";
         button.textContent = text;
         return button;
+    }
+
+    function openModalDialog(options) {
+        return new Promise(function(resolve) {
+            const overlay = document.createElement("div");
+            const dialog = document.createElement("div");
+            const title = document.createElement("h4");
+            const body = document.createElement("div");
+            const actions = document.createElement("div");
+
+            overlay.className = "trans-dialog";
+            dialog.className = "trans-dialog__box";
+            body.className = "trans-dialog__body";
+            actions.className = "trans-dialog__actions";
+            title.textContent = options.title || "";
+
+            function finish(value) {
+                overlay.remove();
+                resolve(value);
+            }
+
+            if (options.content) {
+                body.appendChild(options.content);
+            }
+
+            (options.actions || []).forEach(function(action) {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.textContent = action.label;
+                button.className = "trans-dialog__button" + (action.primary ? " is-primary" : "");
+                button.addEventListener("click", function() {
+                    finish(action.value);
+                });
+                actions.appendChild(button);
+            });
+
+            overlay.addEventListener("click", function(event) {
+                if (event.target === overlay) {
+                    finish(options.dismissValue);
+                }
+            });
+
+            dialog.appendChild(title);
+            dialog.appendChild(body);
+            dialog.appendChild(actions);
+            overlay.appendChild(dialog);
+            document.body.appendChild(overlay);
+        });
+    }
+
+    async function openNoticeModal(message, title) {
+        const content = document.createElement("p");
+        content.textContent = message;
+
+        await openModalDialog({
+            title: title || "AVISO",
+            content: content,
+            actions: [{ label: "ACEPTAR", value: true, primary: true }],
+            dismissValue: true
+        });
+    }
+
+    function openConfirmModal(message, title) {
+        const content = document.createElement("p");
+        content.textContent = message;
+
+        return openModalDialog({
+            title: title || "CONFIRMAR",
+            content: content,
+            actions: [
+                { label: "CANCELAR", value: false },
+                { label: "ACEPTAR", value: true, primary: true }
+            ],
+            dismissValue: false
+        });
+    }
+
+    function openFormModal(titleText, fields) {
+        return new Promise(function(resolve) {
+            const form = document.createElement("form");
+            const inputs = {};
+
+            form.className = "trans-dialog__form";
+
+            fields.forEach(function(field) {
+                const label = document.createElement("label");
+                const text = document.createElement("span");
+                const input = document.createElement("input");
+
+                label.className = "trans-dialog__field";
+                text.textContent = field.label;
+                input.type = "text";
+                input.value = field.value || "";
+                input.placeholder = field.placeholder || "";
+                if (field.optional) {
+                    input.dataset.optional = "1";
+                }
+
+                label.appendChild(text);
+                label.appendChild(input);
+                form.appendChild(label);
+                inputs[field.id] = input;
+            });
+
+            const submit = document.createElement("button");
+            submit.type = "submit";
+            submit.style.display = "none";
+            form.appendChild(submit);
+
+            openModalDialog({
+                title: titleText,
+                content: form,
+                actions: [
+                    { label: "CANCELAR", value: null },
+                    { label: "GUARDAR", value: "__submit__", primary: true }
+                ],
+                dismissValue: null
+            }).then(function(value) {
+                if (value !== "__submit__") {
+                    resolve(null);
+                    return;
+                }
+
+                const result = {};
+                Object.keys(inputs).forEach(function(key) {
+                    result[key] = cleanText(inputs[key].value);
+                });
+                resolve(result);
+            });
+
+            window.setTimeout(function() {
+                const firstInput = form.querySelector("input");
+
+                if (firstInput) {
+                    firstInput.focus();
+                }
+            }, 0);
+        });
     }
 
     function openPdfBrowser(initialHref) {
