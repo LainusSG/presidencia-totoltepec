@@ -681,6 +681,7 @@ h4{
     align-items: center;
     justify-content: flex-start;
     gap: 8px;
+    overflow: hidden;
 }
 
 .trans-pdf-browser__item.is-selected {
@@ -700,6 +701,20 @@ h4{
     align-items: center;
     justify-content: center;
     line-height: 1;
+    flex: 0 0 auto;
+}
+
+.trans-pdf-browser__item span {
+    width: 100%;
+    max-width: 100%;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    line-height: 1.2;
 }
 
 .trans-pdf-browser__icon--folder {
