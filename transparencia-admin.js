@@ -8,20 +8,25 @@
         "totoltepec.transparencia.data.v2"
     ];
     const PDF_KEY = "totoltepec.transparencia.pdfs.v2";
+    const API_GET = "php/obtener.php";
+    const API_SAVE = "php/guardar.php";
 
     let data = null;
     let pdfs = [];
+    let serverPdfs = null;
     let isAdmin = false;
+    let debugDb = false;
 
-    function initTransparenciaAdmin() {
+    async function initTransparenciaAdmin() {
         const info = document.querySelector(".articulo .articulo2 .info");
 
         if (!info) {
             return;
         }
 
+        debugDb = new URLSearchParams(window.location.search).has("debugdb");
         isAdmin = sessionStorage.getItem(ADMIN_SESSION_KEY) === "1";
-        data = loadData();
+        data = await loadData();
 
         if (!isAdmin && !data) {
             return;
@@ -32,7 +37,7 @@
         }
 
         data = normalizeData(data);
-        pdfs = mergePdfs(loadJson(PDF_KEY) || [], collectPdfs(data.nodes));
+        pdfs = mergePdfs(serverPdfs || loadJson(PDF_KEY) || [], collectPdfs(data.nodes));
 
         render(info);
     }
@@ -93,7 +98,13 @@
         return parsed;
     }
 
-    function loadData() {
+    async function loadData() {
+        const serverData = await loadServerData();
+
+        if (serverData) {
+            return serverData;
+        }
+
         for (let index = 0; index < LEGACY_DATA_KEYS.length; index += 1) {
             const stored = loadJson(LEGACY_DATA_KEYS[index]);
 
@@ -103,6 +114,64 @@
         }
 
         return null;
+    }
+
+    async function loadServerData() {
+        try {
+            const response = await fetch(API_GET + "?t=" + Date.now(), {
+                cache: "no-store",
+                headers: {
+                    "Accept": "application/json"
+                }
+            });
+
+            if (!response.ok) {
+                showDbDebug("obtener.php respondio HTTP " + response.status, true);
+                return null;
+            }
+
+            const result = await response.json();
+
+            if (!result || result.success !== true || !result.data) {
+                showDbDebug("obtener.php no regreso datos validos", true);
+                return null;
+            }
+
+            serverPdfs = Array.isArray(result.pdfs) ? result.pdfs : [];
+            showDbDebug("Base conectada. Registros principales: " + (Array.isArray(result.data.nodes) ? result.data.nodes.length : 0), false);
+
+            return normalizeData(result.data);
+        } catch (error) {
+            showDbDebug("No se pudo conectar con php/obtener.php: " + error.message, true);
+            return null;
+        }
+    }
+
+    function showDbDebug(message, isError) {
+        if (!debugDb) {
+            return;
+        }
+
+        const old = document.querySelector(".trans-db-debug");
+
+        if (old) {
+            old.remove();
+        }
+
+        const box = document.createElement("div");
+        box.className = "trans-db-debug";
+        box.style.position = "fixed";
+        box.style.left = "12px";
+        box.style.bottom = "12px";
+        box.style.zIndex = "99999";
+        box.style.maxWidth = "420px";
+        box.style.padding = "10px 12px";
+        box.style.borderRadius = "6px";
+        box.style.font = "14px Arial, sans-serif";
+        box.style.color = "#fff";
+        box.style.background = isError ? "#9f1239" : "#166534";
+        box.textContent = message;
+        document.body.appendChild(box);
     }
 
     function normalizeData(raw) {
@@ -207,16 +276,32 @@
     }
 
     function render(info) {
-        info.innerHTML = "";
-
         if (isAdmin) {
+            info.innerHTML = "";
             renderAdminPanel(info);
+            renderIntro(info);
+            data.nodes.forEach(function(node) {
+                renderNode(info, node, 0);
+            });
+            return;
         }
 
-        renderIntro(info);
+        const existingDynamic = info.querySelector(".trans-dynamic-data");
+
+        if (existingDynamic) {
+            existingDynamic.remove();
+        }
+
+        const dynamic = document.createElement("div");
+        dynamic.className = "trans-dynamic-data";
+
         data.nodes.forEach(function(node) {
-            renderNode(info, node, 0);
+            renderNode(dynamic, node, 0);
         });
+
+        if (dynamic.childNodes.length) {
+            info.appendChild(dynamic);
+        }
     }
 
     function renderIntro(info) {
@@ -2019,6 +2104,46 @@
         localStorage.setItem(DATA_KEY, JSON.stringify(data));
         localStorage.setItem("totoltepec.transparencia.data.v2", JSON.stringify(data));
         savePdfs();
+        saveServerData();
+    }
+
+    async function saveServerData() {
+        fetch(API_SAVE, {
+            method: "POST",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                data: data,
+                pdfs: pdfs
+            })
+        }).then(function(response) {
+            return response.json().then(function(result) {
+                return {
+                    ok: response.ok,
+                    result: result
+                };
+            });
+        }).then(function(payload) {
+            if (!payload.ok || !payload.result || payload.result.success !== true) {
+                const message = payload.result && (payload.result.error || payload.result.message)
+                    ? (payload.result.error || payload.result.message)
+                    : "No se pudo guardar en la base de datos";
+
+                console.error("Error al guardar transparencia:", message);
+
+                if (isAdmin) {
+                    openNoticeModal("El cambio se ve en esta computadora, pero no se guardo en la base de datos: " + message, "ERROR DE GUARDADO");
+                }
+            }
+        }).catch(function(error) {
+            console.error("Error al conectar con guardar.php:", error);
+
+            if (isAdmin) {
+                openNoticeModal("El cambio se ve en esta computadora, pero no se pudo conectar con php/guardar.php. Revisa que los archivos PHP esten subidos y que la pagina no este abierta como archivo local.", "ERROR DE GUARDADO");
+            }
+        });
     }
 
     function savePdfs() {
